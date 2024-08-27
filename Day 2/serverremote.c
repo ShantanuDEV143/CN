@@ -12,6 +12,12 @@ int main() {
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
     char buffer[BUFFER_SIZE];
+    char server_ip[INET_ADDRSTRLEN];
+
+    // Input server IP address
+    printf("Enter server IP address: ");
+    fgets(server_ip, INET_ADDRSTRLEN, stdin);
+    server_ip[strcspn(server_ip, "\n")] = 0; // remove trailing newline
 
     // Create socket
     if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -22,7 +28,12 @@ int main() {
     // Define server address
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
+        perror("Invalid address/ Address not supported");
+        exit(EXIT_FAILURE);
+    }
 
     // Bind socket to address and port
     if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
@@ -36,7 +47,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    printf("Server listening on port %d...\n", PORT);
+    printf("Server listening on IP address %s and port %d...\n", server_ip, PORT);
 
     while (1) {
         // Accept incoming connection
@@ -51,7 +62,7 @@ int main() {
 
         // Receive client name
         recv(client_socket, buffer, BUFFER_SIZE, 0);
-                printf("Client name: %s\n", buffer);
+        printf("Client name: %s\n", buffer);
 
         while (1) {
             // Receive message from client
